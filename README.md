@@ -1,6 +1,7 @@
-# mapas_app
+# Flutter Uber Clone
 
-A new Flutter project.
+Curso de flutter avanzado. 
+Creando clon uber.
 
 ## Getting Started
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:mapas_app/blocs/blocs.dart';
+import 'package:mapas_app/models/models.dart';
 import 'package:mapas_app/themes/themes.dart';
 
 part 'map_event.dart';
@@ -18,16 +19,15 @@ class MapBloc extends Bloc<MapEvent, MapState> {
   StreamSubscription<LocationState>? locationStateSubscription;
 
   GoogleMapController? _mapController;
+  LatLng? mapCenter;
 
   MapBloc({required this.locationBloc}) : super(const MapState()) {
     on<OnMapInitializedEvent>(_onInitMap);
     on<OnStartFollowingUserEvent>(_onStartFollowingUser);
-    on<OnStopFollowingUserEvent>(
-        (event, emit) => emit(state.copyWith(isFollowingUser: false)));
+    on<OnStopFollowingUserEvent>((event, emit) => emit(state.copyWith(isFollowingUser: false)));
     on<UpdateUserPolylineEvent>(_onPolylineNewPoint);
-    on<OnToggleUserRoute>(
-        (event, emit) => emit(state.copyWith(showMyRoute: !state.showMyRoute)));
-
+    on<OnToggleUserRoute>((event, emit) => emit(state.copyWith(showMyRoute: !state.showMyRoute)));
+    on<DisplayPolylinesEvent>((event, emit) => emit(state.copyWith(polylines: event.polylines)));
     locationStateSubscription = locationBloc.stream.listen((locationState) {
       if (locationState.lastKnownLocation != null) {
         add(UpdateUserPolylineEvent(locationState.myLocationHistory));
@@ -47,8 +47,7 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     moveCamera(locationBloc.state.lastKnownLocation!);
   }
 
-  void _onPolylineNewPoint(
-      UpdateUserPolylineEvent event, Emitter<MapState> emit) {
+  void _onPolylineNewPoint(UpdateUserPolylineEvent event, Emitter<MapState> emit) {
     final myRoute = Polyline(
         polylineId: const PolylineId('myRoute'),
         color: const Color.fromARGB(90, 0, 132, 255),
@@ -60,6 +59,24 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     final currentPolylines = Map<String, Polyline>.from(state.polylines);
     currentPolylines['myRoute'] = myRoute;
     emit(state.copyWith(polylines: currentPolylines));
+  }
+
+  void drawRoutePolyline( RouteDestination destination ) async {
+
+    final myRoute = Polyline(
+      polylineId: const PolylineId('route'),
+      color: Colors.white54,
+      points: destination.points,
+      width: 5,
+      startCap: Cap.roundCap,
+      endCap: Cap.roundCap,
+    );
+
+    final currentPolylines = Map<String, Polyline>.from(state.polylines);
+    currentPolylines['route'] = myRoute;
+
+    add(DisplayPolylinesEvent(currentPolylines));
+
   }
 
   void _onInitMap(OnMapInitializedEvent event, Emitter<MapState> emit) {
