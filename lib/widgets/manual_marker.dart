@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mapas_app/blocs/blocs.dart';
+import 'package:mapas_app/helpers/helpers.dart';
 
 class ManualMarker extends StatelessWidget {
   const ManualMarker({Key? key}) : super(key: key);
@@ -64,8 +65,7 @@ class _ManualMarkerBody extends StatelessWidget {
                 shape: const StadiumBorder(),
                 child: const Text('Confirmar destino', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w300),),
                 onPressed: () async{
-
-                  //TODO: loading
+                  final navigator = Navigator.of(context);
 
                   final start = locationBloc.state.lastKnownLocation;
                   if(start == null) return;
@@ -73,9 +73,15 @@ class _ManualMarkerBody extends StatelessWidget {
                   final end = mapBloc.mapCenter;
                   if(end == null) return;
 
-                  final destination = await searchBloc.getCoorsStartToEnd(start, end);
+                  showLoadingMessage(context);
 
-                  mapBloc.drawRoutePolyline(destination);
+                  final destination = await searchBloc.getCoorsStartToEnd(start, end);
+                  await mapBloc.drawRoutePolyline(destination);
+
+                  searchBloc.add(OnDeactivateManualMarkerEvent());
+
+                  navigator.pop();
+
                 }
               ),
             )
