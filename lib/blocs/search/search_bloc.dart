@@ -17,10 +17,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     required this.trafficService
   }) : super( const SearchState() ) {
     
-    on<OnActivateManualMarkerEvent>((event, emit) => emit(state.copyWith(displayManualMarker: true)));
+    on<OnActivateManualMarkerEvent>((event, emit)   => emit(state.copyWith(displayManualMarker: true)));
     on<OnDeactivateManualMarkerEvent>((event, emit) => emit(state.copyWith(displayManualMarker: false)));
+    on<OnNewsPlacesFoundEvent>((event, emit)        => emit(state.copyWith(places: event.places)));
+    on<OnAddToHistoryEvent>((event, emit)           => emit(state.copyWith(history: [event.place, ...state.history])));
 
   }
+
 
   Future<RouteDestination> getCoorsStartToEnd(LatLng start, LatLng end) async {
 
@@ -35,10 +38,19 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
 
     return RouteDestination(
-      points: points, 
+      points:   points, 
       duration: duration, 
       distance: distance
     );
+
+  }
+
+  Future getPlacesByQuery( LatLng proximity, String query) async {
+
+    final newPlaces = await trafficService.getResultsByQuery(proximity, query);
+
+    add(OnNewsPlacesFoundEvent(newPlaces));
+  
 
   }
 

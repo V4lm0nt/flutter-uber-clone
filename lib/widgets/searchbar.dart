@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mapas_app/blocs/blocs.dart';
 import 'package:mapas_app/delegates/delegates.dart';
+import 'package:mapas_app/helpers/helpers.dart';
 import 'package:mapas_app/models/models.dart';
 
 class MyCustomSearchBar extends StatelessWidget {
@@ -25,13 +26,30 @@ class MyCustomSearchBar extends StatelessWidget {
 class _SearchBarBody extends StatelessWidget {
   const _SearchBarBody({Key? key}) : super (key: key);
 
-  void onSearchResults(BuildContext context, SearchResult result){
+  void onSearchResults(BuildContext context, SearchResult result) async{
     final searchBloc = BlocProvider.of<SearchBloc>(context);
+    final locationBloc = BlocProvider.of<LocationBloc>(context);
+    final mapBloc = BlocProvider.of<MapBloc>(context);
 
-    if(result.manual){
+    if(result.manual == true ){
       searchBloc.add(OnActivateManualMarkerEvent());
       return;
     }
+
+    if( result.position!=null && locationBloc.state.lastKnownLocation!=null ){
+      final navigator = Navigator.of(context);
+
+      final start = locationBloc.state.lastKnownLocation!;
+      final end = result.position!;
+
+      showLoadingMessage(context);
+
+      final destination = await searchBloc.getCoorsStartToEnd(start, end);
+      await mapBloc.drawRoutePolyline(destination);
+
+      navigator.pop();
+    }
+
   }
 
   @override
