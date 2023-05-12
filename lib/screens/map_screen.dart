@@ -35,10 +35,10 @@ class _MapScreenState extends State<MapScreen> {
       body: BlocBuilder<LocationBloc, LocationState>(
         builder: (context, locationState) {
           if (locationState.lastKnownLocation == null) {
-            return Center(
+            return const Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   SizedBox(
                     width: 15,
                     height: 15,
@@ -71,9 +71,9 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     MapsView(
                       initialLocation: locationState.lastKnownLocation!,
-                      polylines: polylines.values.toSet()
+                      polylines: polylines.values.toSet(),
+                      markers: mapState.markers.values.toSet(),
                     ),
-                    //TODO: botones...
                     const MyCustomSearchBar(),
                     const ManualMarker(),
                     
@@ -85,9 +85,9 @@ class _MapScreenState extends State<MapScreen> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Column(
+      floatingActionButton: const Column(
         mainAxisAlignment: MainAxisAlignment.end,
-        children: const [
+        children: [
           BtnToggleUserRoute(),
           BtnFollowUser(),
           BtnCurrentLocation(),

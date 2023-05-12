@@ -10,6 +10,8 @@ import 'package:mapas_app/blocs/blocs.dart';
 import 'package:mapas_app/models/models.dart';
 import 'package:mapas_app/themes/themes.dart';
 
+import '../../helpers/helpers.dart';
+
 part 'map_event.dart';
 part 'map_state.dart';
 
@@ -22,12 +24,20 @@ class MapBloc extends Bloc<MapEvent, MapState> {
   LatLng? mapCenter;
 
   MapBloc({required this.locationBloc}) : super(const MapState()) {
+
     on<OnMapInitializedEvent>(_onInitMap);
+
     on<OnStartFollowingUserEvent>(_onStartFollowingUser);
+
     on<OnStopFollowingUserEvent>((event, emit) => emit(state.copyWith(isFollowingUser: false)));
+
     on<UpdateUserPolylineEvent>(_onPolylineNewPoint);
+
     on<OnToggleUserRoute>((event, emit) => emit(state.copyWith(showMyRoute: !state.showMyRoute)));
-    on<DisplayPolylinesEvent>((event, emit) => emit(state.copyWith(polylines: event.polylines)));
+
+    on<DisplayPolylinesEvent>((event, emit) => emit(state.copyWith(polylines: event.polylines, markers: event.markers)));
+
+    
     locationStateSubscription = locationBloc.stream.listen((locationState) {
       if (locationState.lastKnownLocation != null) {
         add(UpdateUserPolylineEvent(locationState.myLocationHistory));
@@ -75,7 +85,49 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     final currentPolylines = Map<String, Polyline>.from(state.polylines);
     currentPolylines['route'] = myRoute;
 
-    add(DisplayPolylinesEvent(currentPolylines));
+    double kms = destination.distance / 1000;
+      kms= (kms * 100).floorToDouble();
+      kms /= 100;
+      
+    int tripDuration = (destination.duration / 60).floor();
+
+    //Custom Markers
+    //final startMarkers = await getAssetImageMarker();
+    //final endMarkers = await getNetworkImageMarker();
+    final customStartMarkers = await getStartCustomMarker(tripDuration, 'Mi Ubicacion');
+    final customEndMarkers = await getEndCustomMarker(kms.toInt(), destination.endPlace.text);
+
+    final startMarker = Marker(
+      markerId: const MarkerId('start'),
+      position: destination.points.first,
+      icon: customStartMarkers,
+      anchor: const Offset(0.1, 1)
+      //infoWindow: InfoWindow(
+      //  title: 'Inicio',
+      //  snippet: 'Distancia: $kms Km. - Duracion: $tripDuration Min.'
+      //)         
+    );
+
+    final endMarker = Marker(
+      markerId: const MarkerId('end'),
+      position: destination.points.last,
+      icon: customEndMarkers,
+      //infoWindow:  InfoWindow(
+      //  title: destination.endPlace.text,
+      //  snippet: destination.endPlace.placeName
+      //),
+             
+    );
+
+    final currentMarkers = Map<String, Marker>.from(state.markers);
+    currentMarkers['start'] = startMarker;
+    currentMarkers['end'] = endMarker;
+    
+    
+    add(DisplayPolylinesEvent(currentPolylines, currentMarkers));
+
+  //  await Future.delayed(const Duration(milliseconds: 500));
+  //  _mapController?.showMarkerInfoWindow(const MarkerId('start'));
 
   }
 
